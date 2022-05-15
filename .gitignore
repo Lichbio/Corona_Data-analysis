@@ -1,129 +1,282 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# Download daily updated data on Covid-19 from Johns Hopkins
+confirmed_df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+deaths_df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
+recoveries_df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv')
 
-# C extensions
-*.so
+# First record day of dataset
+data = [confirmed_df, deaths_df, recoveries_df]
+startdate_list = []                              # Tạo một list trống để thêm vào các giá trị là ngày đầu tiên của từng bộ dữ liệu
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+for x in data: 
+    df_datetime= x.drop(['Province/State','Country/Region','Lat','Long'], axis=1) # Tạo một DataFrame con chỉ chứa các tên cột có kiểu datetime
+    df_datetime.columns = pd.to_datetime(df_datetime.columns)  # Set type datetime cho tất cả các tên cột
+    ser_datetime= pd.Series(df_datetime.columns)  # Đổi tập các tên cột từ dạng index sang dạng series
+    
+    ser_datetime.sort_values(ascending= True)  # Xác định giá trị ngày đầu tiên bằng hàm sort
+    ser_datetime= ser_datetime.dt.strftime('%#m/%#d/%y').astype(str)  # Đổi kiểu của dữ liệu datetime thành type ban đầu sau đó đổi chúng sang string
+    s= list(ser_datetime.head(1)) # Lấy giá trị ngày đầu tiên bằng head() và chuyển nó vào định dạng phần tử trong list
+    startdate_list.extend(s)
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+print(tuple(startdate_list))
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# Last record day of dataset
+data = [confirmed_df, deaths_df, recoveries_df]
+enddate_list = []
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+for x in data: 
+    df_datetime= x.drop(['Province/State','Country/Region','Lat','Long'], axis=1) # Tạo một DataFrame con chỉ chứa các tên cột có kiểu datetime
+    df_datetime.columns = pd.to_datetime(df_datetime.columns)  # Set type datetime cho tất cả các tên cột
+    ser_datetime= pd.Series(df_datetime.columns)  # Đổi tập các tên cột từ dạng index sang dạng series
+    
+    ser1_datetime= ser_datetime.sort_values(ascending=False)  # Xác định giá trị ngày đầu tiên bằng hàm sort
+    ser1_datetime= ser1_datetime.dt.strftime('%#m/%#d/%y').astype(str)  # Đổi kiểu của dữ liệu datetime thành type ban đầu sau đó đổi chúng sang string
+    e= list(ser1_datetime.head(1)) # Lấy giá trị ngày đầu tiên bằng head() và chuyển nó vào định dạng phần tử trong list
+    enddate_list.extend(e)
 
-# Translations
-*.mo
-*.pot
+print(tuple(enddate_list))
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+# No of countries in dataset
+data = [confirmed_df, deaths_df, recoveries_df]
+countries=[]
+for df_x in data:
+    countries.extend([len(df_x['Country/Region'].unique())])  # Dùng phương thức .unique() để đếm các tên quốc gia
+print(tuple(countries))
 
-# Flask stuff:
-instance/
-.webassets-cache
+# Total days record
+data = [confirmed_df, deaths_df, recoveries_df]
+day_n = [ ]
 
-# Scrapy stuff:
-.scrapy
+for x in data: 
+    df_datetime= x.drop(['Province/State','Country/Region','Lat','Long'], axis=1) # Tạo một DataFrame con chỉ chứa các tên cột có kiểu datetime
+    day_n.extend([len(df_datetime.columns)])  # Đếm tên cột tương ứng với tổng số ngày có trong dữ liệu
 
-# Sphinx documentation
-docs/_build/
+print(tuple(day_n))
 
-# PyBuilder
-target/
+#
+# Nhập code ở đây:
+# Tạo một dataframe con chỉ chứa cột tên quốc gia và các cột ngày tháng ghi nhận số ca covid
+confirmed_country= confirmed_df.drop(['Province/State','Lat','Long'], axis=1) 
+# Nhóm dữ liệu theo Country/Region sử dụng hàm .groupby() và tính tổng số ca mắc theo ngày của từng quốc gia, đặt thành 1 dataframe mới
+cfd_country= confirmed_country.groupby('Country/Region').sum()
+# Quốc gia có số ca mắc nhiều nhất trong toàn bộ dữ liệu dựa trên tổng số ca mắc tính tới thời điểm hiện tại
+cfd_country_total = cfd_country[enddate_list[0]]
+# Tìm quốc gia có số ca mắc nhiều nhất trong toàn bộ dữ liệu bằng phương thức .idxmax()
+cfd_country_max= cfd_country_total.idxmax()
+# Tìm ngày có ca mắc nhiều nhất trong bộ dữ liệu của quốc gia có tổng số ca mắc nhiều nhất bằng phương thức .idxmax()
+cf_country_daymax= cfd_country.loc[cfd_country_max,:].idxmax()
+# Số ca mắc của ngày có ca mắc nhiều nhất của quốc gia có tổng ca mắc nhiều nhất
+cf_country_daymax_n= cfd_country.loc[cfd_country_max,:].max()
+print(cfd_country_max,'-',cf_country_daymax,':', cf_country_daymax_n)
 
-# Jupyter Notebook
-.ipynb_checkpoints
 
-# IPython
-profile_default/
-ipython_config.py
+deaths_country= deaths_df.drop(['Province/State','Lat','Long'], axis=1) 
 
-# pyenv
-.python-version
+d_country= deaths_country.groupby('Country/Region').sum()
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+d_country_total= d_country[enddate_list[1]]
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
+d_country_max= d_country_total.idxmax()
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+d_country_daymax= d_country.loc[d_country_max,:].idxmax()
 
-# SageMath parsed files
-*.sage.py
+d_country_daymax_n= d_country.loc[d_country_max,:].max()
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+print(d_country_max,'-',d_country_daymax,':', d_country_daymax_n)
 
-# Spyder project settings
-.spyderproject
-.spyproject
+#Tổng số ca mắc Covid ở Việt Nam vào thời điểm hiện tại của Việt Nam sử dụng dataframe đã nhóm theo quốc gia 
+cdf_vn= cfd_country.loc['Vietnam', enddate_list[0]]
 
-# Rope project settings
-.ropeproject
+# Tổng số ca tử vong ở thời điểm hiện tại của Việt Nam
+d_vn= d_country.loc['Vietnam', enddate_list[1]]
 
-# mkdocs documentation
-/site
+# Tổng số ca hồi phục
+recoveries_country= recoveries_df.drop(['Province/State','Lat','Long'], axis=1) 
+rcv_country= recoveries_country.groupby('Country/Region').sum()
+rcv_vn= rcv_country.loc['Vietnam', enddate_list[2]]
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Tổng số ca còn covid
+activ_case_vn= cdf_vn - d_vn - rcv_vn
 
-# Pyre type checker
-.pyre/
+print('Tổng số ca mắc Covid:', cdf_vn)
+print('Tổng số ca tử vong:', d_vn)
+print('Tổng số ca hồi phục:', rcv_vn)
+print('Tổng số ca còn Covid:', activ_case_vn)
+
+cols = confirmed_df.keys()
+confirmed = confirmed_df.loc[:, cols[4]:cols[-1]]
+deaths = deaths_df.loc[:, cols[4]:cols[-1]]
+recoveries = recoveries_df.loc[:, cols[4]:cols[-1]]
+dates = confirmed.keys()
+
+total_cases = []
+total_deaths = [] 
+mortality_rate = []
+recovery_rate = [] 
+total_recovered = [] 
+total_active = [] 
+adjusted_dates = list(np.array([i for i in range(len(dates))]).reshape(-1, 1)[:, 0])
+
+#Nhập code ở đây:
+total_cases = list(confirmed.sum(axis=0))
+total_deaths = list(deaths.sum(axis=0))
+total_recovered = list(recoveries.sum(axis=0))
+
+for i in range(len(total_cases)):
+    total_active.extend([  total_cases[i] - total_deaths[i] - total_recovered[i]  ])
+    
+# Tống số trường hợp Covid, tổng số ca tử vong, tổng số ca phục hồi và số ca còn mắc Covid cho tới giờ.
+print("Total confirmed cases: ", total_cases[-1])
+print("Total death cases: ", total_deaths[-1])
+print("Total recoveries cases: ", total_recovered[-1])
+print("Total active cases: ", total_active[-1])
+
+# Tạo một dataframe mới chứa các cột là adjusted dates, total cases, total deaths, total recovered và total active
+data_total= {'adjusted dates': adjusted_dates,
+             'total cases': total_cases,
+             'total deaths': total_deaths, 
+              'total recovered': total_recovered, 
+              'total active': total_active
+            }
+data_t= pd.DataFrame(data_total)
+data_t= data_t.set_index('adjusted dates') # Set index cho cột adjusted dates
+data_t.plot(kind='line', figsize= (16,8))
+plt.title('World total COVID-19 cases reported from 1/22/2020 to date')
+plt.xlabel('Days since 1/22/2020')
+plt.ylabel('Number of cases')
+plt.show()
+
+# Tạo một dataframe chứa lg(cases) của total cases, total deaths, total recovered và total active
+data_lg= data_t.copy()
+import math
+data_lg['total cases'] = data_lg['total cases'].apply(lambda x: math.log10(x))   # Thay thế giá trị số cases trong mỗi cột bằng lg(cases)
+data_lg['total deaths'] = data_lg['total deaths'].apply(lambda x: math.log10(x))
+data_lg['total recovered'] = data_lg['total recovered'].replace(0, np.nan)     # Loại bỏ hết các giá trị bằng 0 trong cột total recovered
+data_lg['total recovered'] = data_lg['total recovered'].apply(lambda x: math.log10(x))
+data_lg['total active'] = data_lg['total active'].apply(lambda x: math.log10(x))
+
+data_lg.plot(kind='line', figsize= (16,8))
+plt.title('World total COVID-19 cases reported from 1/22/2020 to date')
+plt.xlabel('Days since 1/22/2020')
+plt.ylabel('Log (number of cases)')
+
+plt.show()
+
+
+data_t['total cases'].plot(kind='line', figsize= (16,8))
+plt.title('World total COVID-19 cases reported from 1/22/2020 to date')
+plt.xlabel('Days since 1/22/2020')
+plt.ylabel('Number of cases')
+plt.show()
+
+data_t['total deaths'].plot(kind='line', figsize= (16,8))
+plt.title('World total COVID-19 death cases reported from 1/22/2020 to date')
+plt.xlabel('Days since 1/22/2020')
+plt.ylabel('Number of cases')
+plt.show()
+
+data_t['total recovered'].plot(kind='line', figsize= (16,8))
+plt.title('LWorld total COVID-19 recovered cases reported from 1/22/2020 to date')
+plt.xlabel('Days since 1/22/2020')
+plt.ylabel('Number of cases')
+plt.show()
+
+data_t['total active'].plot(kind='line', figsize= (16,8))
+plt.title('World total COVID-19 active cases reported from 1/22/2020 to date')
+plt.xlabel('Days since 1/22/2020')
+plt.ylabel('Number of cases')
+plt.show()
+
+
+# Tạo ra các list giá trị gia tăng hàng ngày đối với từng total case, total deaths, total recovered và total active
+
+increases_cases = []
+increases_deaths = [] 
+increases_recovered = [] 
+increases_active = [] 
+adjusted_dates_1 = list(np.array([i for i in range(len(dates)-1)]).reshape(-1, 1)[:, 0])
+
+for i in range(len(data_t)-1):
+    increases_cases.extend([total_cases[i+1] - total_cases[i]])
+    increases_deaths.extend([total_deaths[i+1] - total_deaths[i]])
+    increases_recovered.extend([total_recovered[i+1] - total_recovered[i]])
+    increases_active.extend([total_active[i+1] - total_active[i]])
+    
+# Tạo một dataframe mới chứa các cột là adjusted dates 1, increases_cases, increases_deaths, increases_recovered và increases_active
+data_increase = {'adjusted dates 1': adjusted_dates_1,
+             'increases_cases': increases_cases,
+             'increases_deaths': increases_deaths, 
+              'increases_recovered': increases_recovered, 
+              'increases_active': increases_active
+            }
+data_i = pd.DataFrame(data_increase)
+data_i = data_i.set_index('adjusted dates 1') # Set index cho cột adjusted dates
+data_i.head()
+
+
+ax0 = data_i['increases_cases'].plot(kind='bar', figsize= (16,8))
+plt.title('World daily increases in COVID-19 cases reported from 1/23/2020 to date')
+plt.xlabel('Days since 1/23/2020')
+plt.xticks(np.arange(0, 870 , step = 50))
+plt.ylabel('Number of cases')
+ax0.legend()
+plt.xticks(rotation = 0)
+plt.show()
+
+ax1 = data_i['increases_deaths'].plot(kind='bar', figsize= (16,8))
+plt.title('World daily increases in COVID-19 cases reported from 1/23/2020 to date')
+plt.xlabel('Days since 1/23/2020')
+plt.xticks(np.arange(0, 870, step = 50))
+plt.ylabel('Number cases')
+ax1.legend()
+plt.xticks(rotation = 0)
+plt.show()
+
+ax2 = data_i['increases_recovered'].plot(kind='bar', figsize= (16,8))
+plt.title('World daily increases in COVID-19 cases reported from 1/23/2020 to date')
+plt.xlabel('Days since 1/23/2020')
+plt.xticks(np.arange(0, 870, step = 50))
+plt.ylabel('Number of cases')
+ax2.legend()
+plt.xticks(rotation = 0)
+plt.show()
+
+ax3 = data_i['increases_active'].plot(kind='bar', figsize= (16,8))
+plt.title('World daily increases in COVID-19 cases reported from 1/23/2020 to date')
+plt.xlabel('Days since 1/23/2020')
+plt.xticks(np.arange(0, 870, step = 50))
+plt.ylabel('Number of cases')
+ax3.legend()
+plt.xticks(rotation = 0)
+plt.show()
+
+
+mortality_rate = []
+recovery_rate = [] 
+
+for i in range(len(total_cases)):
+    mortality_rate.extend([total_deaths[i]*100 / total_cases[i]])
+    recovery_rate.extend([total_recovered[i]*100 / total_cases[i]])
+    
+# Tạo một dataframe mới chứa các cột là adjusted dates, mortality rate và recovery rate
+data_mort_rec = {'adjusted dates': adjusted_dates,
+             'mortality rate': mortality_rate,
+             'recovery rate': recovery_rate 
+            }
+data_mr= pd.DataFrame(data_mort_rec)
+data_mr = data_mr.set_index('adjusted dates') # Set index cho cột adjusted dates
+data_mr.head()
+
+
+import matplotlib.patches as mpatches
+
+ax = data_mr['mortality rate'].plot(kind='line', figsize= (16,8))
+plt.title('World COVID-19 mortality rate')
+plt.xlabel('Days since 1/22/2020')
+y= plt.ylabel('Mortality rate(%)')
+plt.axhline(data_mr['mortality rate'].mean(), color='k', linestyle='--', linewidth=4)
+k_patch = mpatches.Patch(label='Average: y=%f' % data_mr['mortality rate'].mean(), color= 'k')
+b_patch = mpatches.Patch(label= 'mortality rate')
+ax.legend(handles=[b_patch, k_patch])
+plt.show()
+
+
