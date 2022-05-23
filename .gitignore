@@ -52,10 +52,10 @@ for x in data:
 
 print(tuple(day_n))
 
-#
-# Nhập code ở đây:
+
+# Country and time with highest confirmed cases
 # Tạo một dataframe con chỉ chứa cột tên quốc gia và các cột ngày tháng ghi nhận số ca covid
-confirmed_country= confirmed_df.drop(['Province/State','Lat','Long'], axis=1) 
+confirmed_country= confirmed_df.drop(['Province/State','Lat','Long'], axis=1)      
 # Nhóm dữ liệu theo Country/Region sử dụng hàm .groupby() và tính tổng số ca mắc theo ngày của từng quốc gia, đặt thành 1 dataframe mới
 cfd_country= confirmed_country.groupby('Country/Region').sum()
 # Quốc gia có số ca mắc nhiều nhất trong toàn bộ dữ liệu dựa trên tổng số ca mắc tính tới thời điểm hiện tại
@@ -69,21 +69,17 @@ cf_country_daymax_n= cfd_country.loc[cfd_country_max,:].max()
 print(cfd_country_max,'-',cf_country_daymax,':', cf_country_daymax_n)
 
 
-deaths_country= deaths_df.drop(['Province/State','Lat','Long'], axis=1) 
-
+# Country and time with highest total deaths
+deaths_country= deaths_df.drop(['Province/State','Lat','Long'], axis=1)
 d_country= deaths_country.groupby('Country/Region').sum()
-
 d_country_total= d_country[enddate_list[1]]
-
 d_country_max= d_country_total.idxmax()
-
 d_country_daymax= d_country.loc[d_country_max,:].idxmax()
-
 d_country_daymax_n= d_country.loc[d_country_max,:].max()
-
 print(d_country_max,'-',d_country_daymax,':', d_country_daymax_n)
 
-#Tổng số ca mắc Covid ở Việt Nam vào thời điểm hiện tại của Việt Nam sử dụng dataframe đã nhóm theo quốc gia 
+
+#  Total confirmed cases in Vietnam (Tổng số ca mắc Covid ở Việt Nam vào thời điểm hiện tại của Việt Nam sử dụng dataframe đã nhóm theo quốc gia)
 cdf_vn= cfd_country.loc['Vietnam', enddate_list[0]]
 
 # Tổng số ca tử vong ở thời điểm hiện tại của Việt Nam
@@ -102,6 +98,8 @@ print('Tổng số ca tử vong:', d_vn)
 print('Tổng số ca hồi phục:', rcv_vn)
 print('Tổng số ca còn Covid:', activ_case_vn)
 
+
+# Global analysis (Phân tích toàn cầu)
 cols = confirmed_df.keys()
 confirmed = confirmed_df.loc[:, cols[4]:cols[-1]]
 deaths = deaths_df.loc[:, cols[4]:cols[-1]]
@@ -116,7 +114,6 @@ total_recovered = []
 total_active = [] 
 adjusted_dates = list(np.array([i for i in range(len(dates))]).reshape(-1, 1)[:, 0])
 
-#Nhập code ở đây:
 total_cases = list(confirmed.sum(axis=0))
 total_deaths = list(deaths.sum(axis=0))
 total_recovered = list(recoveries.sum(axis=0))
@@ -130,6 +127,8 @@ print("Total death cases: ", total_deaths[-1])
 print("Total recoveries cases: ", total_recovered[-1])
 print("Total active cases: ", total_active[-1])
 
+
+# Data visualization: Line graph of total cases, total deaths, total recovered and total active (Vẽ biểu đồ đường hiện thị số lượng và log(10))
 # Tạo một dataframe mới chứa các cột là adjusted dates, total cases, total deaths, total recovered và total active
 data_total= {'adjusted dates': adjusted_dates,
              'total cases': total_cases,
@@ -187,6 +186,8 @@ plt.ylabel('Number of cases')
 plt.show()
 
 
+
+# Draw line graph showing daily incresed cases
 # Tạo ra các list giá trị gia tăng hàng ngày đối với từng total case, total deaths, total recovered và total active
 
 increases_cases = []
@@ -210,7 +211,6 @@ data_increase = {'adjusted dates 1': adjusted_dates_1,
             }
 data_i = pd.DataFrame(data_increase)
 data_i = data_i.set_index('adjusted dates 1') # Set index cho cột adjusted dates
-data_i.head()
 
 
 ax0 = data_i['increases_cases'].plot(kind='bar', figsize= (16,8))
@@ -250,9 +250,8 @@ plt.xticks(rotation = 0)
 plt.show()
 
 
-mortality_rate = []
-recovery_rate = [] 
 
+# Mortality rate and recovery rate
 for i in range(len(total_cases)):
     mortality_rate.extend([total_deaths[i]*100 / total_cases[i]])
     recovery_rate.extend([total_recovered[i]*100 / total_cases[i]])
@@ -278,5 +277,258 @@ k_patch = mpatches.Patch(label='Average: y=%f' % data_mr['mortality rate'].mean(
 b_patch = mpatches.Patch(label= 'mortality rate')
 ax.legend(handles=[b_patch, k_patch])
 plt.show()
+
+
+ax_r = data_mr['recovery rate'].plot(kind='line', figsize= (16,8))
+plt.title('World COVID-19 recovery rate')
+plt.xlabel('Days since 1/22/2020')
+y= plt.ylabel('Recovery rate(%)')
+plt.axhline(data_mr['recovery rate'].mean(), color='k', linestyle='--', linewidth=4)
+k_patch = mpatches.Patch(label='Average: y=%f' % data_mr['recovery rate'].mean(), color= 'k', linestyle= '--')
+b_patch = mpatches.Patch(label= 'recovery rate')
+ax_r.legend(handles=[b_patch, k_patch])
+plt.show()
+
+
+
+# Continent analysis
+# Preprocessing
+confirmed_df.loc[confirmed_df['Country/Region'] == "US", "Country/Region"] = "USA"
+deaths_df.loc[deaths_df['Country/Region'] == "US", "Country/Region"] = "USA"
+recoveries_df.loc[recoveries_df['Country/Region'] == "US", "Country/Region"] = "USA"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == 'Korea, South', "Country/Region"] = 'South Korea'
+deaths_df.loc[deaths_df['Country/Region'] == 'Korea, South', "Country/Region"] = 'South Korea'
+recoveries_df.loc[recoveries_df['Country/Region'] == "Korea, South", "Country/Region"] = "South Korea"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == 'Taiwan*', "Country/Region"] = 'Taiwan'
+deaths_df.loc[deaths_df['Country/Region'] == 'Taiwan*', "Country/Region"] = 'Taiwan'
+recoveries_df.loc[recoveries_df['Country/Region'] == "Taiwan*", "Country/Region"] = "Taiwan"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == 'Congo (Kinshasa)', "Country/Region"] = 'Democratic Republic of the Congo'
+deaths_df.loc[deaths_df['Country/Region'] == 'Congo (Kinshasa)', "Country/Region"] = 'Democratic Republic of the Congo'
+recoveries_df.loc[recoveries_df['Country/Region'] == "Congo (Kinshasa)", "Country/Region"] = "Democratic Republic of the Congo"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == "Cote d'Ivoire", "Country/Region"] = "Côte d'Ivoire"
+deaths_df.loc[deaths_df['Country/Region'] == "Cote d'Ivoire", "Country/Region"] = "Côte d'Ivoire"
+recoveries_df.loc[recoveries_df['Country/Region'] == "Cote d'Ivoire", "Country/Region"] = "Côte d'Ivoire"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == "Reunion", "Country/Region"] = "Réunion"
+deaths_df.loc[deaths_df['Country/Region'] == "Reunion", "Country/Region"] = "Réunion"
+recoveries_df.loc[recoveries_df['Country/Region'] == "Reunion", "Country/Region"] = "Réunion"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == 'Congo (Brazzaville)', "Country/Region"] = 'Republic of the Congo'
+deaths_df.loc[deaths_df['Country/Region'] == 'Congo (Brazzaville)', "Country/Region"] = 'Republic of the Congo'
+recoveries_df.loc[recoveries_df['Country/Region'] == "Congo (Brazzaville)", "Country/Region"] = "Republic of the Congo"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == 'Bahamas, The', "Country/Region"] = 'Bahamas'
+deaths_df.loc[deaths_df['Country/Region'] == 'Bahamas, The', "Country/Region"] = 'Bahamas'
+recoveries_df.loc[recoveries_df['Country/Region'] == "Bahamas, The", "Country/Region"] = "Bahamas"
+
+confirmed_df.loc[confirmed_df['Country/Region'] == 'Gambia, The', "Country/Region"] = 'Gambia'
+deaths_df.loc[deaths_df['Country/Region'] == 'Gambia, The', "Country/Region"] = 'Gambia'
+recoveries_df.loc[recoveries_df['Country/Region'] == "Gambia, The", "Country/Region"] = "Gambia"
+
+# nhận tất cả các quốc gia
+countries = np.asarray(confirmed_df["Country/Region"])
+countries1 = np.asarray(deaths_df["Country/Region"])
+countries2 = np.asarray(recoveries_df["Country/Region"])
+
+# Continent_code thành Continent_names
+continents = {
+    'NA': 'North America',
+    'SA': 'South America', 
+    'AS': 'Asia',
+    'OC': 'Australia',
+    'AF': 'Africa',
+    'EU' : 'Europe',
+    'na' : 'Others'
+}
+
+# Định nghĩa hàm để nhận continent code cho quốc gia.
+def country_to_continent_code(country):
+    try:
+        return pc.country_alpha2_to_continent_code(pc.country_name_to_country_alpha2(country))
+    except :
+        return 'na'
+       
+       
+ confirmed_df1 = confirmed_df.copy()
+deaths_df1 = deaths_df.copy()
+recoveries_df1 = recoveries_df.copy()
+
+continent_0 = []
+continent_1 = []
+continent_2 = []
+countries_0 = np.asarray(confirmed_df1["Country/Region"])
+countries_1 = np.asarray(deaths_df1["Country/Region"])
+countries_2 = np.asarray(recoveries_df1["Country/Region"])
+
+for country in countries_0:
+    continent_0.extend([country_to_continent_code(country)])
+
+for country in countries_1:
+    continent_1.extend([country_to_continent_code(country)])
+    
+for country in countries_2:
+    continent_2.extend ([country_to_continent_code(country)])
+    
+confirmed_df1.insert(2, column = 'Continent', value = continent_0)
+deaths_df1.insert(2, column = 'Continent', value = continent_1)
+recoveries_df1.insert(2, column = 'Continent', value = continent_2)
+recoveries_df1
+
+# Chuyển continent code thành continent name
+
+data1 = [confirmed_df1, deaths_df1, recoveries_df1]
+for x_df in data1:
+    x_df['Continent'] = x_df['Continent'].str.replace('NA', 'North America')
+    x_df['Continent'] = x_df['Continent'].str.replace('SA', 'South America')
+    x_df['Continent'] = x_df['Continent'].str.replace('AS', 'Asia')
+    
+    x_df['Continent'] = x_df['Continent'].str.replace('OC', 'Australia')
+    x_df['Continent'] = x_df['Continent'].str.replace('AF', 'Africa')
+    x_df['Continent'] = x_df['Continent'].str.replace('EU', 'Europe')
+    x_df['Continent'] = x_df['Continent'].str.replace('na', 'Others')
+        
+        
+       
+# Tạo 3 dataframe con xuất phát từ 3 tệp dữ liệu ban đầu confirmed_df, deaths_df, recoveries_df
+
+# Dataframe chứa tổng Confirmed cases theo Country
+df1_1 = confirmed_df1.drop(['Province/State','Lat','Long','Continent'], axis=1)
+df1_2 = df1_1.groupby('Country/Region').sum()
+df1_2['Confirmed'] = df1_2[enddate_list[0]]
+df1_2= df1_2.reset_index()
+country_df_cfd = df1_2.loc[:,['Country/Region', 'Confirmed']]
+
+# Dataframe chứa tổng Death cases theo Country
+df2_1 = deaths_df1.drop(['Province/State','Lat','Long','Continent'], axis=1)
+df2_2 = df2_1.groupby('Country/Region').sum()
+df2_2['Deaths'] = df2_2[enddate_list[1]]
+df2_2= df2_2.reset_index()
+country_df_d = df2_2.loc[:, ['Country/Region', 'Deaths'] ]
+
+# Dataframe chứa tổng Recovered cases theo Country
+df3_1 = recoveries_df1.drop(['Province/State','Lat','Long','Continent'], axis=1)
+df3_2 = df3_1.groupby('Country/Region').sum()
+df3_2['Recoveries'] = df3_2[enddate_list[2]]
+df3_2= df3_2.reset_index()
+country_df_rec = df3_2.loc[:, ['Country/Region', 'Recoveries'] ]
+
+# Merge tất cả 3 dataframe đã tạo được ở trên thành 1 Dataframe duy nhất 
+df_merge1 = pd.merge(country_df_cfd, country_df_d , left_on='Country/Region', right_on='Country/Region', how='outer') 
+country_df = pd.merge(df_merge1, country_df_rec, left_on='Country/Region', right_on='Country/Region', how='outer')
+
+# Xử lý giá trị trống
+country_df = country_df.replace(np.nan, 0)
+country_df.iloc[:, 1:] = country_df.iloc[:, 1:].astype(int)
+
+# Chèn thêm trường Continent
+continents_all = []
+countries_all = np.array(country_df['Country/Region']) 
+for country in countries_all:
+    continents_all.extend([country_to_continent_code(country)])
+country_df.insert(1, column='Continent', value= continents_all)
+
+# Tạo thêm trường Active và Molitory Rate
+active1 = []
+mortality_rate1 = []
+for i in range(len(country_df)):
+    active1.extend([ country_df.iloc[i,2] - country_df.iloc[i,3] - country_df.iloc[i,4] ])
+    mortality_rate1.extend([ country_df.iloc[i,3]*100 / country_df.iloc[i,2] ])
+
+country_df.insert(5, column='Active', value= active1)
+country_df.insert(6, column='Mortality Rate', value= mortality_rate1) 
+country_df.set_index('Country/Region', inplace=True)
+
+# Chuyển continent code thành continent name
+
+country_df['Continent'] = country_df['Continent'].str.replace('NA', 'North America')
+country_df['Continent'] = country_df['Continent'].str.replace('SA', 'South America')
+country_df['Continent'] = country_df['Continent'].str.replace('AS', 'Asia')
+    
+country_df['Continent'] = country_df['Continent'].str.replace('OC', 'Australia')
+country_df['Continent'] = country_df['Continent'].str.replace('AF', 'Africa')
+country_df['Continent'] = country_df['Continent'].str.replace('EU', 'Europe')
+country_df['Continent'] = country_df['Continent'].str.replace('na', 'Others')
+
+
+# Tạo data frame continents_df với chỉ mục là trường "continent"
+country_df_edit = country_df.drop('Mortality Rate', axis = 1)
+continents_df = country_df_edit.groupby('Continent').sum()
+continent_mortality_rate = []
+
+for i in range(len(continents_df)):
+    continent_mortality_rate.extend([ continents_df.iloc[i,1]*100 / continents_df.iloc[i,0] ])
+
+continents_df.insert(4, column='Mortality Rate', value= continent_mortality_rate) 
+
+
+
+# Visualization (covarient matrix)
+corr_matrix = continents_df.corr()
+sns.heatmap(corr_matrix, annot = True)
+plt.show()
+
+
+# Pie chart
+pie_continents_df = continents_df.drop('Mortality Rate', axis = 1)
+colors_list = ['gold', 'yellowgreen', 'lightcoral', 'cyan', 'lightgreen', 'pink', 'lightskyblue']
+for i in range(len(pie_continents_df.columns)):
+    pie_continents_df.iloc[:,i].plot(kind = 'pie', figsize = [14, 12], autopct ='%1.1f%%', startangle = 90, labels = None, colors = colors_list)
+    plt.legend(labels = continents_df.index, loc = 'upper right')
+    plt.title('World Total Confirmed COVID-19 Cases by Continents')
+    plt.show()
+    
+
+
+
+# Country analysis
+ Lọc dữ liệu vĩ trí địa lý từ bảng ban đầu của các quốc gia và thêm vào bảng country_df
+geo_country_df = confirmed_df1.loc[:, ['Country/Region','Lat','Long']].drop_duplicates(subset = 'Country/Region', keep='first')
+country_df1 = country_df.reset_index()
+country_df2 = pd.merge(country_df1, geo_country_df, left_on= 'Country/Region', right_on='Country/Region', how='left')
+country_df2.set_index('Country/Region', inplace = True)
+
+# Lấy dữ liệu địa lý của Việt Nam
+vn_loc = list(np.array(country_df2.loc['Vietnam', ['Lat', 'Long']]))
+# Lập bản đồ folium
+covid_worldmap = folium.Map(location=vn_loc, zoom_start=4)
+covid_worldmap
+
+# Tạo feature group để chồng lấp dữ liệu vào bản đồ folium
+covid_cases = folium.map.FeatureGroup()
+for lat, long, cfd in zip(country_df2['Lat'], country_df2['Long'], country_df2['Confirmed']):
+    covid_cases.add_child(folium.features.CircleMarker(
+        [lat, long], radius = cfd/1000000, color = 'orange', fill= True, fill_color='orange', fill_opacity=0.6))
+
+covid_worldmap.add_child(covid_cases)
+covid_worldmap
+
+# Chèn ghi chú
+folium.features.Marker(location=vn_loc, popup='<strong>' + "Vietnam" +'</strong>' + '<br>' + '<br>'+
+                       "Confirmed:" + str(country_df2.loc['Vietnam','Confirmed']) +'<br>'+
+                       "Deaths:" + str(country_df2.loc['Vietnam','Deaths']) +'<br>'+
+                       "Recoveries:" + str(country_df2.loc['Vietnam','Recoveries']) +'<br>'+
+                       "Mortality Rate:" + str(round((country_df2.loc['Vietnam','Mortality Rate']),2)) +'<br>').add_to(covid_worldmap)
+
+country_lg = country_df2.copy()
+country_lg['Confirmed'] = country_lg['Confirmed'].apply(lambda x: math.log10(x)) 
+country_lg = country_lg.reset_index()
+covid_2_worldmap = folium.Map(zoom_start = 4)
+world_geo = r'countries.geojson'
+covid_2_worldmap.choropleth(geo_data = world_geo,
+                            data = country_lg,
+                            columns = ['Country/Region','Confirmed'],
+                            key_on = 'feature.properties.ISO_A3',
+                            fill_color = 'YlOrBr',
+                            legend_name = 'Log10 (number of cases)'
+                           )
+                           
+                           
+
+
+
 
 
