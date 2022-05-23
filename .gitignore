@@ -466,7 +466,7 @@ continents_df.insert(4, column='Mortality Rate', value= continent_mortality_rate
 
 
 
-# Visualization (covarient matrix)
+# Visualization (correlation matrix)
 corr_matrix = continents_df.corr()
 sns.heatmap(corr_matrix, annot = True)
 plt.show()
@@ -527,8 +527,4 @@ covid_2_worldmap.choropleth(geo_data = world_geo,
                            )
                            
                            
-
-
-
-
 
