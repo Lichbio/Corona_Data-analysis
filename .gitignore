@@ -1,3 +1,21 @@
+#Import thư viện
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import ticker 
+import pycountry_convert as pc
+from pycountry_convert import country_mappings as cm
+import folium
+from datetime import datetime, timedelta,date
+from scipy.interpolate import make_interp_spline, BSpline
+import plotly.express as px
+import plotly.graph_objs as go
+import json
+import plotly.offline as py
+import seaborn as sns
+plt.style.use('fivethirtyeight')
+
+
 # Download daily updated data on Covid-19 from Johns Hopkins
 confirmed_df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
 deaths_df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv')
