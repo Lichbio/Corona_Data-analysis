@@ -1,2 +1,2 @@
 # Corona_Data-analysis
-Codes were written by Python
+Codes were written in Python
