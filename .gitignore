@@ -6,8 +6,6 @@ from matplotlib import ticker
 import pycountry_convert as pc
 from pycountry_convert import country_mappings as cm
 import folium
-from datetime import datetime, timedelta,date
-from scipy.interpolate import make_interp_spline, BSpline
 import plotly.express as px
 import plotly.graph_objs as go
 import json
